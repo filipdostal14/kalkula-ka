@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Kalkulačka složeného úročení</title>
+<style>
+body { font-family: Arial; max-width: 700px; margin: auto; padding: 20px; }
+input { margin: 5px 0; width: 100%; padding: 5px; }
+button { padding: 10px; margin-top: 10px; width: 100%; }
+.result { margin-top: 20px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h2>Kalkulačka složeného úročení</h2>
+
+<label>Počáteční věk:</label>
+<input type="number" id="startAge" value="15">
+
+<label>Cílový věk:</label>
+<input type="number" id="endAge" value="65">
+
+<label>Počáteční měsíční vklad (Kč):</label>
+<input type="number" id="monthlyDeposit" value="500">
+
+<label>Navýšení vkladu každé 3 roky (Kč):</label>
+<input type="number" id="increase" value="100">
+
+<label>Roční výnos (%):</label>
+<input type="number" id="interest" value="7">
+
+<label>Roční inflace (%):</label>
+<input type="number" id="inflation" value="3.8">
+
+<button onclick="calculate()">Spočítat</button>
+
+<div class="result" id="output"></div>
+
+<script>
+function calculate() {
+    let startAge = parseInt(document.getElementById("startAge").value);
+    let endAge = parseInt(document.getElementById("endAge").value);
+    let monthlyDeposit = parseFloat(document.getElementById("monthlyDeposit").value);
+    let increase = parseFloat(document.getElementById("increase").value);
+    let annualRate = parseFloat(document.getElementById("interest").value) / 100;
+    let inflation = parseFloat(document.getElementById("inflation").value) / 100;
+
+    let months = (endAge - startAge) * 12;
+    let monthlyRate = annualRate / 12;
+
+    let total = 0;
+    let totalDeposits = 0;
+
+    for (let m = 1; m <= months; m++) {
+
+        if (m % 36 === 1 && m !== 1) {
+            monthlyDeposit += increase;
+        }
+
+        total += monthlyDeposit;
+        totalDeposits += monthlyDeposit;
+
+        total *= (1 + monthlyRate);
+    }
+
+    let realValue = total / Math.pow(1 + inflation, (endAge - startAge));
+
+    document.getElementById("output").innerHTML = `
+        Celková naspořená částka: ${Math.round(total).toLocaleString()} Kč<br>
+        Celkové vklady: ${Math.round(totalDeposits).toLocaleString()} Kč<br>
+        Zhodnocení (úrok): ${Math.round(total - totalDeposits).toLocaleString()} Kč<br>
+        Reálná hodnota (po odečtení inflace): ${Math.round(realValue).toLocaleString()} Kč
+    `;
+}
+</script>
+
+</body>
+</html>
