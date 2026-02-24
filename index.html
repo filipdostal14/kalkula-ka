@@ -2,17 +2,19 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<title>Kalkulačka složeného úročení</title>
+<title>Kalkulačka složeného úročení s grafem</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body { font-family: Arial; max-width: 700px; margin: auto; padding: 20px; }
+body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
 input { margin: 5px 0; width: 100%; padding: 5px; }
 button { padding: 10px; margin-top: 10px; width: 100%; }
 .result { margin-top: 20px; font-weight: bold; }
+canvas { margin-top: 30px; }
 </style>
 </head>
 <body>
 
-<h2>Kalkulačka složeného úročení</h2>
+<h2>Kalkulačka složeného úročení (graf)</h2>
 
 <label>Počáteční věk:</label>
 <input type="number" id="startAge" value="15">
@@ -36,7 +38,11 @@ button { padding: 10px; margin-top: 10px; width: 100%; }
 
 <div class="result" id="output"></div>
 
+<canvas id="investmentChart"></canvas>
+
 <script>
+let chart;
+
 function calculate() {
     let startAge = parseInt(document.getElementById("startAge").value);
     let endAge = parseInt(document.getElementById("endAge").value);
@@ -51,6 +57,10 @@ function calculate() {
     let total = 0;
     let totalDeposits = 0;
 
+    let labels = [];
+    let nominalData = [];
+    let realData = [];
+
     for (let m = 1; m <= months; m++) {
 
         if (m % 36 === 1 && m !== 1) {
@@ -59,18 +69,63 @@ function calculate() {
 
         total += monthlyDeposit;
         totalDeposits += monthlyDeposit;
-
         total *= (1 + monthlyRate);
-    }
 
-    let realValue = total / Math.pow(1 + inflation, (endAge - startAge));
+        if (m % 12 === 0) {
+            let yearsPassed = m / 12;
+            labels.push(startAge + yearsPassed);
+            nominalData.push(total);
+
+            let realValue = total / Math.pow(1 + inflation, yearsPassed);
+            realData.push(realValue);
+        }
+    }
 
     document.getElementById("output").innerHTML = `
         Celková naspořená částka: ${Math.round(total).toLocaleString()} Kč<br>
         Celkové vklady: ${Math.round(totalDeposits).toLocaleString()} Kč<br>
         Zhodnocení (úrok): ${Math.round(total - totalDeposits).toLocaleString()} Kč<br>
-        Reálná hodnota (po odečtení inflace): ${Math.round(realValue).toLocaleString()} Kč
+        Reálná hodnota (po odečtení inflace): ${Math.round(realData[realData.length - 1]).toLocaleString()} Kč
     `;
+
+    if (chart) chart.destroy();
+
+    const ctx = document.getElementById('investmentChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Nominální hodnota',
+                    data: nominalData,
+                    borderWidth: 2,
+                    tension: 0.3
+                },
+                {
+                    label: 'Reálná hodnota (po inflaci)',
+                    data: realData,
+                    borderWidth: 2,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + " Kč";
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 </script>
 
